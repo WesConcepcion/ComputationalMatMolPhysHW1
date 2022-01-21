@@ -97,30 +97,26 @@ while Ediff > deltaE_limit:
     Ediff = np.abs(E - E_begin)
     
     
-r_1 = np.linspace(0,5,10)
+r_1 = np.linspace(-5,5,100)
 Wave = np.zeros(len(r_1))
 for i in range(len(r_1)):
     Wave[i] = np.sum(C * Chi(r_1[i], alpha))
 
-#plt.plot(r_1,Wave)
+fig, ax = plt.subplots()
 
+ax.plot(r_1,Wave)
+plt.xlabel('r')
+plt.ylabel('$\phi$(r)')
 
 #print('Task 1:')
 #print('Wave function:', Wave)
 #print('')
-#print('Ground state energy of helium atom in a.u.:', E)
+print('Ground state energy of helium atom in a.u.:', E)
 
 
 
 # Task 2
 
-
-
-def u_eq_eq(r):
-    return np.sqrt(4*np.exp(-2*r))*r # wrong
-
-def u_eq(r, alpha, C):
-    return np.sqrt(4*np.pi)*r*np.sum(C*np.exp(-alpha*r**2))
   
 def x_stuff(a, b, n):
     h = (b-a)/n
@@ -128,22 +124,9 @@ def x_stuff(a, b, n):
     for i in range(n):
         x_i[i] = a + i*h
     return x_i, h
-
-def y_prime(a, b, n, alpha, C, i):
-    #y = np.zeros((n))
-    x = x_stuff(a, b, n)[0]
-    h = x_stuff(a, b, n)[1]
-    return (u_eq_eq(x[i+1])-u_eq_eq(x[i-1]))/(2*h)
-
-def y_prime_prime(a, b, n, i):
-    x = x_stuff(a, b, n)[0]
-    h = x_stuff(a, b, n)[1]
-    return (Hatree_pot(x[i+1]) - 2*Hatree_pot(x[i]) + Hatree_pot(x[i-1]))/(h**2)
     
 
-def density(r, alpha, C): # u(r) = np.sqrt(2*pi*n(r))*r
-    #n = np.zeros(((4)))
-    #for t in range(4):
+def density(r, alpha, C): # n_s(r) = 2*np.abs(phi(r))**2
     n = 2*np.abs(np.sum(C*Chi(r,alpha)))**2
     return n
 
@@ -178,14 +161,53 @@ u_sqq[-1] = 1
 U = np.linalg.solve(A,u_sqq) # Solve: AU = u_sqq
 
 
-print(u_sqq)
+#print(u_sqq)
 
-plt.plot(rrr,U/rrr)
-plt.plot(rrr,Hatree_pot(rrr),'r--')
-plt.legend(['FDM', 'Hatree'])
+
+#fig1, ax1 = plt.subplots()
+#ax1.plot(rrr,U/rrr)
+#ax1.plot(rrr,Hatree_pot(rrr),'r--')
+#ax1.legend(['FDM', 'Hatree'])
+
+
+
+
 
 
 # Task 3
+
+
+
+def V_xc(r): # Page 3 in the assignment sheet
+    A = 0.0311
+    B = -0.048
+    C = 0.002
+    D = -0.0116
+    gamma = -0.1423
+    beta_1 = 1.0529
+    beta_2 = 0.3334
+    
+    n = np.zeros(len(r))
+    eps_x = np.zeros(len(r))
+    eps_c = np.zeros(len(r))
+    
+    
+    for i in range(len(r)):
+        n[i] = 3/(4*np.pi*r[i]**3)
+        #eps_x
+        eps_x[i] = -3/4 * (3*n[i]/np.pi)**(1/3)
+        
+        # eps_c
+        if r[i] >= 1:
+            eps_c[i] = gamma/(1+beta_1*np.sqrt(r[i])+beta_2*r[i])
+        else:
+            eps_c[i] = A*np.log(r[i])+B+C*r[i]*np.log(r[i])+D*r[i]
+            
+        eps_xc = eps_x + eps_c
+        
+    
+    return eps_xc - n**(1/3)/4*(r/np.pi)**(1/3)
+
 
 
 
