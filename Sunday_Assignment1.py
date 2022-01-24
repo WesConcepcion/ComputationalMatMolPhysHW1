@@ -100,18 +100,18 @@ while Ediff > deltaE_limit:
     Ediff = np.abs(E - E_begin)
     
     
-r_1 = np.linspace(0,6,100)
+r_1 = np.linspace(0.00001,6,100)
 Wave = np.zeros(len(r_1))
 for i in range(len(r_1)):
     Wave[i] = np.sum(C * Chi(r_1[i], alpha))
 
-fig, ax = plt.subplots()
+#fig, ax = plt.subplots()
 
-ax.plot(r_1,Wave)
-ax.set_xlabel('r (Bohr radius)',fontsize = 15)
-ax.set_ylabel('$\phi$(r)',fontsize = 15)
-ax.xaxis.set_tick_params(labelsize=13)
-ax.yaxis.set_tick_params(labelsize=13)
+#ax.plot(r_1,Wave)
+#ax.set_xlabel('r (Bohr radius)',fontsize = 15)
+#ax.set_ylabel('$\phi$(r)',fontsize = 15)
+#ax.xaxis.set_tick_params(labelsize=13)
+#ax.yaxis.set_tick_params(labelsize=13)
 
 #print('Task 1:')
 #print('Ground state energy of helium atom in a.u.:', E)
@@ -130,8 +130,8 @@ def x_stuff(a, b, n):
     
 
 def density(r, alpha, C): # n_s(r) = 2*np.abs(phi(r))**2
-    n = 2*np.abs(np.sum(C*Chi(r,alpha)))**2
-    return n
+    n_s = np.sum(C*Chi(r,alpha))
+    return n_s
 
 
 def Hatree_pot(r):
@@ -147,8 +147,8 @@ n = 50
 h = x_stuff(a, b, n+1)[1]
 rrr = x_stuff(a, b, n+1)[0]
 A = np.zeros((n+1, n+1))
-A[0, 0] = 1
-A[n, n] = 1
+A[0, 0] = -2
+A[n, n] = -2
 #A[0, 1] = 1
 #A[n, n-1] = 1
 u_sqq = np.zeros((n+1))
@@ -157,20 +157,20 @@ for i in range(1, n):
     A[i, i-1] = 1
     A[i, i] = -2
     A[i, i+1] = 1
-    u_sqq[i] = -h**2*2*np.pi*density(rrr[i], alpha,C)*rrr[i]
+    u_sqq[i] = -h**2*8*np.pi*density(rrr[i], alpha,C)**2*rrr[i]
     
 u_sqq[0] = 0
-u_sqq[-1] = 1   
+u_sqq[-1] = 0   
 U = np.linalg.solve(A,u_sqq) # Solve: AU = u_sqq
 
-#fig1, ax1 = plt.subplots()
-#ax1.plot(rrr,U/rrr)
-#ax1.plot(rrr,Hatree_pot(rrr),'r--')
-#ax1.legend(['FDM', 'Hatree'])
-#ax1.set_xlabel('r (Bohr radius)',fontsize = 15)
-#ax1.set_ylabel('$V_H$(r)',fontsize = 15)
-#ax1.xaxis.set_tick_params(labelsize=13)
-#ax1.yaxis.set_tick_params(labelsize=13)
+fig1, ax1 = plt.subplots()
+ax1.plot(rrr,U/rrr)
+ax1.plot(rrr,Hatree_pot(rrr),'r--')
+ax1.legend(['FDM', 'Hatree'])
+ax1.set_xlabel('r (Bohr radius)',fontsize = 15)
+ax1.set_ylabel('$V_H$(r)',fontsize = 15)
+ax1.xaxis.set_tick_params(labelsize=13)
+ax1.yaxis.set_tick_params(labelsize=13)
 
 
 
@@ -189,7 +189,6 @@ def V_xc(r, wave): # Page 3 in the assignment sheet
     gamma = -0.1423
     beta_1 = 1.0529
     beta_2 = 0.3334
-    
     n = n_eq(r, wave)
     eps_x = -3/4 * (3*n/np.pi)**(1/3)  
     eps_c = np.zeros(len(r))
@@ -205,23 +204,28 @@ def V_xc(r, wave): # Page 3 in the assignment sheet
         # d/dn (eps_xc) = - n**(1/3)/4 * (3/np.pi)**(1/3)
     return eps_xc - (n**(1/3)/4 * (3/np.pi)**(1/3)), eps_xc
 
+
 def n_eq(r, wave):
-    dr = r[1]-r[0]
-    integral = np.sum(wave**2*dr) # should be = 1
+    #dr = r[1]-r[0]
+   # integral = np.sum(wave**2*dr) # should be = 1
     #normalized = wave/np.sqrt(integral)
-    
-    return 2*np.abs(wave)**2
+    return np.abs(wave)**2
+
+def Wave_phi(u, r,n):
+    phi = np.zeros((n))
+    for i in range(n):
+        phi[i] = u[i]/(r[i]*np.sqrt(4*np.pi))
+    return phi
 
 
 def E_calc(epsilon, wave, r, h):
     E = np.zeros((len(epsilon)))
     dr = r[1] - r[0]
     for i in range(len(epsilon)):
-        E[i] += 2*epsilon[i]
-        for j in range(len(epsilon)):
-            E[i] = -np.sum((dr*wave[j]**2) * \
-                (0.5*Hatree_pot(rrr)[j] + V_xc(rrr,wave)[0][j] - \
-                V_xc(rrr, wave)[1][j]))
+        E[i] = 2*epsilon[i] - np.sum((dr*wave[i]**2) * \
+                (0.5*Hatree_pot(rrr)[i] + V_xc(rrr,wave)[0][i] - \
+                V_xc(rrr, wave)[1][i]))
+
     
     
     
@@ -236,17 +240,17 @@ def KS_eq(a, b, n): # Kohn-Sham eq.
     A = np.zeros((n+1, n+1))
     A[0, 0] = 0
     A[n, n] = 0
-    A[0, 1] = -1/(2*h**2)
-    A[n, n-1] = -1/(2*h**2)
-    u = np.zeros((n+1))
+    #A[0, 1] = -1/(2*h**2)
+    #A[n, n-1] = -1/(2*h**2)
+    #u = np.zeros((n+1))
     limit = 1e-6 # a.u.
     diff = 1
     E = 1
-    u = np.ones(n+1)
+    phi = np.ones((n+1))
     while diff > limit:
         for i in range(1, n):
             A[i, i-1] = -1/(2*h**2)
-            A[i, i] = 2/(2*h**2) + (-2/rrr[i] + Hatree_pot(rrr)[i] + V_xc(rrr,u)[0][i])
+            A[i, i] = 2/(2*h**2) + (-2/rrr[i] + Hatree_pot(rrr)[i] + V_xc(rrr,phi)[0][i])
             A[i, i+1] = -1/(2*h**2)
             
         eigvalu, eigvect = eigh(A) # Solve eigen problem
@@ -258,12 +262,12 @@ def KS_eq(a, b, n): # Kohn-Sham eq.
         
         #print(epsilon.shape)
        # print(eigvect.shape)
-            
-        E_0 = E_calc(eigvalu, u, rrr, h)
+        phi = Wave_phi(u[0,:],rrr,n+1)
+        E_0 = E_calc(eigvalu, phi, rrr, h)
         diff = np.abs(E_0[0] - E)
         E = E_0[0]
-        u = u[0,:]
-        #print(diff)
+        
+        print(diff)
         #print('E',E)
     #E_0 = 0
 
@@ -271,7 +275,7 @@ def KS_eq(a, b, n): # Kohn-Sham eq.
 
 
 
-#print(KS_eq(a, b, n)[0])
+#print(KS_eq(a, b, n)[2])
 
 
 
@@ -294,9 +298,6 @@ def Schr_eq(r): # Schrödinger eq.
     val = val/val[0]
     
     vec = np.transpose(vec) # Wavefunctions, row=points, col=state
-    
-    
-    
     return val, vec
 
 #print(Schr_eq(rrr)[0])
@@ -304,7 +305,7 @@ def Schr_eq(r): # Schrödinger eq.
 
 fig2, ax2 = plt.subplots()
 #
-plt.plot(rrr,KS_eq(a, b, n)[1][2,0:n+1])
+plt.plot(rrr,KS_eq(a, b, n)[1][1,:n+1])
 plt.plot(rrr,Schr_eq(rrr)[1][2,:n+1])
 #
 ax2.legend(['DFT','Schr'])
